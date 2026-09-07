@@ -494,7 +494,7 @@
 </div>
 
 <script>
-  // Lipește aici URL-ul aplicației web Google Apps Script (pasul 5 din instrucțiuni)
+  // URL-ul aplicației web Google Apps Script
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVGBpV0ePo6oF0taVNvBR0mIXG6KSbOHXL30xzsj5TOZ01mhGLyzBhRgNomroh8xLB_Q/exec';
 
   let choice = null;
@@ -557,11 +557,14 @@
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(entry)
       });
+
       form.style.display = 'none';
       rsvpMessage.classList.add('visible');
       rsvpMessage.textContent = choice === 'yes'
         ? `Mulțumim, ${name}! Te așteptăm cu drag, alături de ${count === 1 ? 'tine' : count + ' persoane'}.`
         : `Ne pare rău că nu poți fi alături de noi, ${name}. Mulțumim pentru răspuns!`;
+      
+      // Reîncărcăm lista de admin după ce s-a trimis
       loadAdminList();
     } catch (err) {
       submitBtn.disabled = false;
@@ -580,7 +583,10 @@
   let adminUnlocked = false;
 
   adminToggle.addEventListener('click', () => {
-    if (adminPanel.classList.contains('visible')) { adminPanel.classList.remove('visible'); return; }
+    if (adminPanel.classList.contains('visible')) { 
+      adminPanel.classList.remove('visible'); 
+      return; 
+    }
     if (!adminUnlocked) {
       const pin = window.prompt('Introdu codul de organizator:');
       if (pin === null) return;
@@ -597,20 +603,25 @@
     try {
       const res = await fetch(SCRIPT_URL);
       const entries = await res.json();
+      
       if (!entries || entries.length === 0) {
         adminSummary.textContent = 'Nicio confirmare încă.';
         adminList.innerHTML = '<li class="admin-empty">Aici vor apărea răspunsurile invitaților.</li>';
         return;
       }
+      
       const attending = entries.filter(e => e.attending);
       const notAttending = entries.filter(e => !e.attending);
       const totalGuests = attending.reduce((sum, e) => sum + (Number(e.guests) || 0), 0);
+      
       adminSummary.textContent = `${attending.length} confirmări pozitive · ${totalGuests} persoane în total · ${notAttending.length} nu pot ajunge`;
+      
       attending.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt)).forEach(e => {
         const li = document.createElement('li');
         li.innerHTML = `<span>${escapeHtml(e.name)}</span><span class="count">${e.guests} ${e.guests === 1 ? 'persoană' : 'persoane'}</span>`;
         adminList.appendChild(li);
       });
+      
       notAttending.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt)).forEach(e => {
         const li = document.createElement('li');
         li.style.opacity = '0.55';
@@ -629,6 +640,5 @@
     return div.innerHTML;
   }
 </script>
-
 </body>
 </html>
